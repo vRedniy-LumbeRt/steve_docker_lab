@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: flask_app
+    environment:
+      - DATABASE_URI=postgresql://flaskuser:password@db/flask_db
+    volumes:
+      - ./app:/app
+      - flask_app_static:/app/static
+    depends_on:
+      - db
+    ports:
+      - "5000:5000"
+    networks:
+      - app_network
+    command: >
+      sh -c "flask db upgrade || flask db init && flask db migrate -m 'Initial migration' && flask db upgrade && flask run --host=0.0.0.0 --port=5000"
+
+
+  db:
+    image: postgres:13-alpine
+    container_name: postgres_db
+    environment:
+      - POSTGRES_USER=flaskuser
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=flask_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+volumes:
+  flask_app_static:
+  postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
